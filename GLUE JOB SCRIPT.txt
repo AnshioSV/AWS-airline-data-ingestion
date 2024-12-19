@@ -1,0 +1,32 @@
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+from awsglue import DynamicFrame
+import re
+
+args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
+job.init(args['JOB_NAME'], args)
+
+# Script generated for node Amazon Redshift
+AmazonRedshift_node1734598856611 = glueContext.create_dynamic_frame.from_options(connection_type="redshift", connection_options={"sampleQuery": "SELECT * FROM airlines.airports_dim", "redshiftTmpDir": "s3://aws-glue-assets-221082182966-ap-southeast-2/temporary/", "useConnectionProperties": "true", "connectionName": "Redshift connection"}, transformation_ctx="AmazonRedshift_node1734598856611")
+
+# Script generated for node AWS Glue Data Catalog
+AWSGlueDataCatalog_node1734596149545 = glueContext.create_dynamic_frame.from_catalog(database="airlines-datamart", table_name="anshioflights_csv", transformation_ctx="AWSGlueDataCatalog_node1734596149545")
+
+# Script generated for node Filter
+Filter_node1734596435098 = Filter.apply(frame=AWSGlueDataCatalog_node1734596149545, f=lambda row: (row["depdelay"] >= 60), transformation_ctx="Filter_node1734596435098")
+
+# Script generated for node Change Schema
+ChangeSchema_node1734602065395 = ApplyMapping.apply(frame=Filter_node1734596435098, mappings=[("depdelay", "long", "dep_delay", "long"), ("arrdelay", "long", "arr_delay", "long"), ("destairportid", "long", "arr_airport", "long"), ("carrier", "string", "carrier", "string")], transformation_ctx="ChangeSchema_node1734602065395")
+
+# Script generated for node Amazon Redshift
+AmazonRedshift_node1734602256805 = glueContext.write_dynamic_frame.from_options(frame=ChangeSchema_node1734602065395, connection_type="redshift", connection_options={"redshiftTmpDir": "s3://aws-glue-assets-221082182966-ap-southeast-2/temporary/", "useConnectionProperties": "true", "dbtable": "airlines.daily_flights_fact", "connectionName": "Redshift connection", "preactions": "CREATE TABLE IF NOT EXISTS airlines.daily_flights_fact (dep_delay BIGINT, arr_delay BIGINT, arr_airport BIGINT, carrier VARCHAR);"}, transformation_ctx="AmazonRedshift_node1734602256805")
+
+job.commit()
